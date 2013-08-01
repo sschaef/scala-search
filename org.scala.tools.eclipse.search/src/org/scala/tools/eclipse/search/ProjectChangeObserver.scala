@@ -57,7 +57,7 @@ object ProjectChangeObserver {
     override def resourceChanged(event: IResourceChangeEvent): Unit = {
       Option(event).foreach { ev =>
         event.getType match {
-          case IResourceChangeEvent.POST_CHANGE => event.getDelta.accept { (delta: IResourceDelta) => 
+          case IResourceChangeEvent.POST_CHANGE => event.getDelta.accept { (delta: IResourceDelta) =>
             if (delta.getResource().isInstanceOf[IProject]) {
               val project = delta.getResource().asInstanceOf[IProject]
               if ((delta.getFlags & IResourceDelta.OPEN) != 0) {

@@ -54,6 +54,11 @@
              description="Open Type Hierarchy"
              categoryId="org.scala.tools.eclipse.search.commands"
              id="org.scala.tools.eclipse.search.commands.OpenTypeHierarchy"/>
+    <command
+             name="Find Declaration"
+             description="Find the declaration of an identifier"
+             categoryId="org.scala.tools.eclipse.search.commands"
+             id="org.scala.tools.eclipse.search.commands.FindDeclaration"/>
   </extension>
 
   <!-- Handlers -->
@@ -64,6 +69,10 @@
     <handler
              class="org.scala.tools.eclipse.search.handlers.OpenTypeHierarchy"
              commandId="org.scala.tools.eclipse.search.commands.OpenTypeHierarchy" />
+    <handler
+          class="org.scala.tools.eclipse.search.handlers.FindDeclaration"
+          commandId="org.scala.tools.eclipse.search.commands.FindDeclaration">
+    </handler>
   </extension>
 
   <!-- Menus -->
@@ -79,6 +88,10 @@
                id="org.scala.tools.eclipse.search.menus.typehiearchy"
                label="Open Type Hierarchy"
                tooltip="" />
+      <command
+            commandId="org.scala.tools.eclipse.search.commands.FindDeclaration"
+            label="Find Declaration"
+            tooltip="" />
     </menuContribution>
   </extension>
 

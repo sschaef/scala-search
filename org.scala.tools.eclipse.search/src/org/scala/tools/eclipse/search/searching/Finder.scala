@@ -6,7 +6,6 @@ import scala.reflect.internal.util.SourceFile
 import scala.tools.eclipse.ScalaPlugin
 import scala.tools.eclipse.ScalaProject
 import scala.tools.eclipse.logging.HasLogger
-
 import org.eclipse.core.runtime.IProgressMonitor
 import org.scala.tools.eclipse.search.Entity
 import org.scala.tools.eclipse.search.ErrorHandlingOption
@@ -15,6 +14,8 @@ import org.scala.tools.eclipse.search.TypeEntity
 import org.scala.tools.eclipse.search.indexing.Index
 import org.scala.tools.eclipse.search.indexing.Occurrence
 import org.scala.tools.eclipse.search.indexing.SearchFailure
+import scala.collection.Iterator
+import org.scala.tools.eclipse.search.indexing.Occurrence
 
 /**
  * Component that provides various methods related to finding Scala entities.
@@ -113,6 +114,41 @@ class Finder(index: Index, reporter: ErrorReporter) extends HasLogger {
         monitor.done()
       }
     }(reporter.reportError(s"Could not access source file ${loc.cu.file.path}"))
+  }
+
+  def findDeclaration
+      (entity: Entity, monitor: IProgressMonitor)
+      (handler: Confidence[Hit] => Unit, errorHandler: SearchFailure => Unit = _ => ()): Unit = {
+
+    entity.location.cu.withSourceFile { (sf, pc) =>
+      val spc = new SearchPresentationCompiler(pc)
+      for {
+        comparator <- spc.comparator(entity.location) onEmpty reporter.reportError(comparatorErrMsg(entity.location, sf))
+        names      <- spc.possibleNamesOfEntityAt(entity.location) onEmpty reporter.reportError(symbolErrMsg(entity.location, sf))
+      } {
+//        val (a, b) = index.findDeclarations(names.head, relevantProjects(entity.location))
+        val (occurrences, failures) = index.findOccurrences(names, relevantProjects(entity.location))
+        failures.foreach(errorHandler)
+        monitor.beginTask("Typechecking for exact matches", occurrences.size)
+
+        val possibleDeclarations = occurrences.takeWhile(_ => !monitor.isCanceled()) flatMap { occurrence =>
+          monitor.subTask(s"Checking ${occurrence.file.file.name}")
+          val loc = Location(occurrence.file, occurrence.offset)
+          val res: PartialFunction[ComparisionResult, Occurrence] = {
+            case Same => occurrence
+          }
+          monitor.worked(1)
+          res.lift(comparator isSameAs loc)
+        }
+
+        val declaration = possibleDeclarations find spc.isDeclaration
+        declaration match {
+          case Some(d) => handler(Certain(d.toHit))
+          case _ => logger.debug(s"no declaration found for '$entity'")
+        }
+        monitor.done()
+      }
+    }(reporter.reportError(s"Could not access source file ${entity.location.cu.file.path}"))
   }
 
   /**

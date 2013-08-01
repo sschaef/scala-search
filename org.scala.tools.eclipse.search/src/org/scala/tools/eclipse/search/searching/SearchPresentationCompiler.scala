@@ -8,11 +8,11 @@ import scala.tools.eclipse.ScalaPresentationCompiler
 import scala.tools.eclipse.javaelements.ScalaCompilationUnit
 import scala.tools.eclipse.logging.HasLogger
 import scala.tools.nsc.interactive.Response
-
 import org.scala.tools.eclipse.search.Entity
 import org.scala.tools.eclipse.search.ErrorHandlingOption
 import org.scala.tools.eclipse.search.TypeEntity
 import org.scala.tools.eclipse.search.indexing.Declaration
+import org.scala.tools.eclipse.search.indexing.Occurrence
 import org.scala.tools.eclipse.search.indexing.Occurrence
 
 /**
@@ -50,6 +50,16 @@ class SearchPresentationCompiler(val pc: ScalaPresentationCompiler) extends HasL
         else new UnknownEntity(nme, loc)
       }
       case _ => None
+    }
+  }
+
+  def isDeclaration(occurrence: Occurrence): Boolean = {
+    val loc = Location(occurrence.file, occurrence.offset)
+    symbolAt(loc) match {
+      case FoundSymbol(sym) =>
+        pc.askOption { () => sym.pos.point == occurrence.offset } getOrElse false
+      case _ =>
+        false
     }
   }
 
